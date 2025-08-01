@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Multiplication Quiz</title>
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: auto; padding: 20px; }
+    .question, .timer, #result { font-size: 1.5em; margin-bottom: 10px; }
+    input[type="number"], input[type="text"], input[type="email"] { font-size: 1em; padding: 5px; width: 100%; }
+    button { padding: 10px 20px; font-size: 1em; margin-top: 10px; }
+    #scoreSheet pre { background: #f9f9f9; padding: 10px; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h2>Multiplication Quiz</h2>
+  
+  <div id="quizArea">
+    <div class="question" id="questionText"></div>
+    <div class="timer" id="timer">⏱ 3</div>
+    <input type="number" id="answerInput" />
+    <button onclick="submitAnswer()">Submit</button>
+  </div>
+
+  <div id="scoreSheet" style="display:none;">
+    <h3>✅ Quiz Complete!</h3>
+    <div id="scoreDisplay" style="font-size: 1.2em; font-weight: bold;"></div>
+    <h4>Your Answers:</h4>
+    <pre id="answerSummary"></pre>
+    <button onclick="showForm()">Continue to Submit</button>
+  </div>
+
+  <div id="userForm" style="display:none;">
+    <h3>Enter Your Info</h3>
+    <input type="text" id="userName" placeholder="Your Name" required><br><br>
+    <input type="email" id="userEmail" placeholder="Your Email" required><br><br>
+    <button onclick="submitToSheet()">Submit Quiz</button>
+  </div>
+
+  <div id="result" style="display:none;"></div>
+
+  <script>
+    const totalQuestions = 10;
+    let questions = [];
+    let current = 0;
+    let timer = 3;
+    let timerId;
+    let score = 0;
+
+    function generateQuestion() {
+      const a = Math.floor(Math.random() * 10) + 1;
+      const b = Math.floor(Math.random() * 10) + 1;
+      return { a, b, correct: a * b, user: null };
+    }
+
+    function startQuiz() {
+      for (let i = 0; i < totalQuestions; i++) {
+        questions.push(generateQuestion());
+      }
+      current = 0;
+      showQuestion();
+    }
+
+    function showQuestion() {
+      if (current >= totalQuestions) {
+        endQuiz();
+        return;
+      }
+
+      const q = questions[current];
+      document.getElementById("questionText").textContent = `Q${current + 1}: ${q.a} × ${q.b}`;
+      document.getElementById("answerInput").value = "";
+      document.getElementById("answerInput").focus();
+      timer = 3;
+      document.getElementById("timer").textContent = `⏱ ${timer}`;
+      timerId = setInterval(() => {
+        timer--;
+        document.getElementById("timer").textContent = `⏱ ${timer}`;
+        if (timer === 0) {
+          clearInterval(timerId);
+          submitAnswer(true);
+        }
+      }, 1000);
+    }
+
+    function submitAnswer(auto = false) {
+      clearInterval(timerId);
+      const input = document.getElementById("answerInput").value;
+      const userAnswer = auto || input === "" ? "No Answer" : parseInt(input);
+      questions[current].user = userAnswer;
+      if (userAnswer === questions[current].correct) {
+        score++;
+      }
+      current++;
+      showQuestion();
+    }
+
+    function endQuiz() {
+      document.getElementById("quizArea").style.display = "none";
+
+      // Show answers and score
+      const summary = questions.map((q, i) =>
+        `Q${i+1}: ${q.a}×${q.b} = ${q.correct}, You: ${q.user}`
+      ).join("\n");
+
+      document.getElementById("scoreDisplay").textContent = `Your Score: ${score} / ${totalQuestions}`;
+      document.getElementById("answerSummary").textContent = summary;
+      document.getElementById("scoreSheet").style.display = "block";
+    }
+
+    function showForm() {
+      document.getElementById("scoreSheet").style.display = "none";
+      document.getElementById("userForm").style.display = "block";
+    }
+
+    function submitToSheet() {
+      const name = document.getElementById("userName").value.trim();
+      const email = document.getElementById("userEmail").value.trim();
+      if (!name || !email) return alert("Please enter your name and email.");
+
+      const answers = questions.map((q, i) =>
+        `Q${i+1}: ${q.a}×${q.b}=${q.correct}, You: ${q.user}`
+      ).join("\n");
+
+      fetch("https://script.google.com/macros/s/AKfycbw_O2z45izrJ_XYCgbEmqdsryOfmtdxbaW0sWB1O0w7IEDK4yoc_CJTv5oCgHUFz4JH/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          score,
+          answers
+        })
+      }).then(() => {
+        document.getElementById("userForm").style.display = "none";
+        document.getElementById("result").style.display = "block";
+        document.getElementById("result").textContent = `✅ Quiz submitted! Your score: ${score}/${totalQuestions}`;
+      }).catch(() => {
+        alert("❌ Failed to submit quiz. Try again.");
+      });
+    }
+
+    window.onload = startQuiz;
+  </script>
+</body>
+</html>
