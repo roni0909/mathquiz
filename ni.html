@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multiplication Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    #quiz {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    #timer {
+      font-size: 1.5rem;
+      margin-top: 1rem;
+    }
+    input {
+      font-size: 1.5rem;
+      width: 100px;
+      text-align: center;
+    }
+    #result {
+      margin-top: 2rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Multiplication Quiz</h1>
+  <div id="quiz">Loading...</div>
+  <input type="number" id="answer" autocomplete="off" />
+  <div id="timer">Time left: 5</div>
+  <div id="result"></div>
+
+  <script>
+    const totalQuestions = 10;
+    const questions = [];
+    let current = 0;
+    let timeLeft = 5;
+    let timer;
+
+    // Generate 10 random multiplication questions
+    for (let i = 0; i < totalQuestions; i++) {
+      const a = Math.floor(Math.random() * 9) + 1;
+      const b = Math.floor(Math.random() * 9) + 1;
+      questions.push({ a, b, correct: a * b, userAnswer: null });
+    }
+
+    const quizDiv = document.getElementById('quiz');
+    const input = document.getElementById('answer');
+    const timerDiv = document.getElementById('timer');
+    const resultDiv = document.getElementById('result');
+
+    function startQuestion() {
+      if (current >= totalQuestions) {
+        return showResults();
+      }
+
+      const q = questions[current];
+      quizDiv.textContent = `${q.a} × ${q.b} = ?`;
+      input.value = '';
+      input.focus();
+      timeLeft = 5;
+      timerDiv.textContent = `Time left: ${timeLeft}`;
+
+      timer = setInterval(() => {
+        timeLeft--;
+        timerDiv.textContent = `Time left: ${timeLeft}`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          recordAnswer();
+        }
+      }, 1000);
+    }
+
+    function recordAnswer() {
+      const val = input.value.trim();
+      questions[current].userAnswer = val === '' ? 'No Answer' : val;
+      current++;
+      startQuestion();
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        clearInterval(timer);
+        recordAnswer();
+      }
+    });
+
+    function showResults() {
+      quizDiv.style.display = 'none';
+      input.style.display = 'none';
+      timerDiv.style.display = 'none';
+
+      let html = '<h2>Results</h2><ol>';
+      for (const q of questions) {
+        const isCorrect = parseInt(q.userAnswer) === q.correct;
+        html += `<li>${q.a} × ${q.b} = ${q.correct} — Your answer: <strong>${q.userAnswer}</strong> ${isCorrect ? '✅' : '❌'}</li>`;
+      }
+      html += '</ol>';
+      resultDiv.innerHTML = html;
+    }
+
+    // Start the quiz
+    startQuestion();
+  </script>
+</body>
+</html>
